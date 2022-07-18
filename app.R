@@ -1,34 +1,61 @@
 library(shiny)
-options(shiny.maxRequestSize=3000*1024^2) #3 GB
+library(shinythemes)
+library(Seurat)
+library(ggplot2)
+library(gridExtra)
+library(egg)
+library(RColorBrewer)
+library(shinyWidgets)
 
-#Function to retrieve available data sets in the suerat object
-list_datasets <- function(obj){
-  sets <- unique(obj@meta.data$dataset)
-}
+# Getting the file names
+rdsfiles <- list.files(pattern = "\\.Rds$")
 
-# ---Frontend---
-ui <- fluidPage(
-  # App title
-  titlePanel("SeuratPlusVisium Data Viewer"),
+# --- Front End ---
+ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
   
-  # File Upload
-  fileInput(inputId = "upload", 
-            label = "Upload Seurat Object in .Rds format"),
-  )
-
-# ---Backend---
-require(Seurat)
-require(seuratplusvisium)
-require(ggplot2)
-
-server <- function(input, output, session) {
+  # Title
+  headerPanel("Seuraplusvisium Data Viewer"),
   
-  observe({
-    inFile <- input$upload
-    if (is.null(inFile))
-      return(NULL)
-    seurat <- readRDS(inFile)
-    sets <- list_datasets(inFile)
+  # Sidebar to select a dataset
+  sidebarPanel(
+    selectInput("dataset", "Choose a dataset:", 
+                choices = rdsfiles),
+  ),
+  
+  # 
+  mainPanel(
+    tabsetPanel(
+      tabPanel('UMAP', plotOutput("umap")),
+      tabPanel('Gene', plotOutput("gene"))
+      
+    ))
+  
+)))
+
+# --- Back end ---
+server <- shinyServer(function(input, output) {
+  
+  # Return the requested dataset
+  datasetInput <- reactive({
+    df <- readRDS(paste0("/temp2/data/", input$dataset))
+    return(df)
   })
-}
+  
+  # Generate a UMAP of the dataset
+  output$umap <- renderPlot({
+    dataset <- datasetInput()
+    plot(input$dataset, reduction = "umap")
+    
+  })
+  
+  # Generate a Feature of the dataset
+  output$gene <- renderPlot({
+    dataset <- datasetInput()
+    FeaturePlot(dataset, reduction = "umap")
+    
+  })
+  
+})
+
+
 shinyApp(ui, server)
