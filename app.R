@@ -14,19 +14,21 @@ rdsfiles <- list.files(pattern = "\\.Rds$")
 ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
   
   # Title
-  headerPanel("Seuraplusvisium Data Viewer"),
+  headerPanel("Seuratplusvisium Data Viewer"),
   
   # Sidebar to select a dataset
   sidebarPanel(
     selectInput("dataset", "Choose a dataset:", 
                 choices = rdsfiles),
+    textInput("feature", label = "Gene")
   ),
   
   # 
   mainPanel(
     tabsetPanel(
+      tabPanel('Tissue', plotOutput("tissue")),
       tabPanel('UMAP', plotOutput("umap")),
-      tabPanel('Gene', plotOutput("gene"))
+      tabPanel('Genes', plotOutput("genex"))
       
     ))
   
@@ -37,18 +39,18 @@ server <- shinyServer(function(input, output) {
   
   # Return the requested dataset
   datasetInput <- reactive({
-    df <- readRDS(paste0("/temp2/data/", input$dataset))
+    df <- readRDS(input$dataset, input$dataset)
     return(df)
   })
   
-  # Generate a UMAP of the dataset
+  # Retrieve the UMAP projection
   output$umap <- renderPlot({
     dataset <- datasetInput()
-    plot(input$dataset, reduction = "umap")
+    DimPlot(dataset, reduction = "umap")
     
   })
   
-  # Generate a Feature of the dataset
+  # 
   output$gene <- renderPlot({
     dataset <- datasetInput()
     FeaturePlot(dataset, reduction = "umap")
