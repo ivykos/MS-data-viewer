@@ -6,6 +6,7 @@ library(gridExtra)
 library(egg)
 library(RColorBrewer)
 library(shinyWidgets)
+library(tidyverse)
 
 
 # Getting the file names
@@ -48,10 +49,20 @@ server <- shinyServer(function(input, output) {
     df <- readRDS(input$obj, input$obj)
     return(df)
   })
+  
+  # Return the tissue coordinate
   tissueInput <- reactive({
     inFile <- req(input$tissue_csv)
     return(inFile)
   })
+  
+  # Return requested gene or feature
+  featInput <- reactive({
+    text <- req(input$feature)
+    return(text)
+  })
+  
+  #Generate the tissue plot
   output$tissue <- renderPlot({
     obj <- datasetInput()
     tiss <- tissueInput()
@@ -64,7 +75,13 @@ server <- shinyServer(function(input, output) {
     DimPlot(obj, reduction = "umap")
     
   })
-  
+  # Plot the expression of a gene
+  output$genex <- renderPlot({
+    obj <- datasetInput()
+    tiss <- tissueInput()
+    feat <- featInput()
+    get_expression(obj, feat, tiss)
+  })
   
 })
 
