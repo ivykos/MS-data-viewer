@@ -7,29 +7,35 @@ library(egg)
 library(RColorBrewer)
 library(shinyWidgets)
 
+
 # Getting the file names
 rdsfiles <- list.files(pattern = "\\.Rds$")
-
+csvfiles <- list.files(pattern = "\\.csv$" )
 # --- Front End ---
 ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
   
   # Title
-  headerPanel("Seuratplusvisium Data Viewer"),
+  headerPanel("Seurat + Visium Data Viewer"),
   
   # Sidebar to select a dataset
   sidebarPanel(
-    selectInput("dataset", "Choose a dataset:", 
+    selectInput("obj", "Choose a dataset:", #data_set is a seurat object
                 choices = rdsfiles),
-    textInput("feature", label = "Gene")
+    selectInput("tissue_csv", 
+              "Load tissue positions .csv file",
+              choices = csvfiles),
+    textInput("feature", label = "Gene"),
+    
+    
   ),
   
-  # 
+  # Different analyses available
   mainPanel(
     tabsetPanel(
-      tabPanel('Tissue', plotOutput("tissue")),
       tabPanel('UMAP', plotOutput("umap")),
-      tabPanel('Genes', plotOutput("genex"))
-      
+      tabPanel('Tissue', plotOutput("tissue")),
+      tabPanel('Gene Expression', plotOutput("genex")),
+      #tabPanel("Test", tableOutput("contents"))
     ))
   
 )))
@@ -37,25 +43,28 @@ ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
 # --- Back end ---
 server <- shinyServer(function(input, output) {
   
-  # Return the requested dataset
+  # Return the requested datasets
   datasetInput <- reactive({
-    df <- readRDS(input$dataset, input$dataset)
+    df <- readRDS(input$obj, input$obj)
     return(df)
   })
-  
+  tissueInput <- reactive({
+    inFile <- req(input$tissue_csv)
+    return(inFile)
+  })
+  output$tissue <- renderPlot({
+    obj <- datasetInput()
+    tiss <- tissueInput()
+    transfer_clusters(obj, tiss)
+    
+ })
   # Retrieve the UMAP projection
   output$umap <- renderPlot({
-    dataset <- datasetInput()
-    DimPlot(dataset, reduction = "umap")
+    obj <- datasetInput()
+    DimPlot(obj, reduction = "umap")
     
   })
   
-  # 
-  output$gene <- renderPlot({
-    dataset <- datasetInput()
-    FeaturePlot(dataset, reduction = "umap")
-    
-  })
   
 })
 
