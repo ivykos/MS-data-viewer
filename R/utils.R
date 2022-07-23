@@ -14,10 +14,11 @@ transfer_clusters <- function(obj, csv){
   idents <- rownames_to_column(idents)
   pos.ordered <- positions[order(positions$V1),]
   idents.ordered <- idents[order(idents$rowname),]
+  identity <- as.factor(idents.ordered$obj.active.ident)
   
   plt2 <- ggplot(pos.ordered, aes(x=pos.ordered$V3, y=pos.ordered$V4, 
-                                  color=as.factor(idents.ordered$obj.active.ident))) + 
-    geom_point() + theme_linedraw()
+                                  color=identity)) + 
+    geom_point() + theme_linedraw() + xlab("X") + ylab("Y") 
   
   plt2
 }
@@ -39,7 +40,10 @@ get_expression <- function(obj, feature, csv){
   rotated <- as.data.frame(t(feature_count))
   rotated <- as.data.frame(t(rotated))
   
+  expression <- rotated$V1
   ggplot(pos.ordered, aes(pos.ordered$V3, pos.ordered$V4)) + 
-    geom_point(aes(color = rotated$V1), size = 2) + 
-    scale_color_viridis(option = "inferno") + theme_bw()
+    geom_point(aes(color = expression), size = 2) + 
+    scale_color_viridis(option = "inferno") + theme_bw() + xlab("X") + ylab("Y") +
+    ggtitle(as.character(feature))
+  
 }
