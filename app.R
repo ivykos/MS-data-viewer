@@ -13,7 +13,7 @@ library(tidyverse)
 rdsfiles <- list.files(pattern = "\\.Rds$")
 csvfiles <- list.files(pattern = "\\.csv$" )
 # --- Front End ---
-ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
+ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
   
   # Title
   headerPanel("Seurat + Visium Data Viewer"),
@@ -23,9 +23,9 @@ ui <- shinyUI(fluidPage(theme = shinytheme("cerulean"), pageWithSidebar(
     selectInput("obj", "Choose a dataset:", #data_set is a seurat object
                 choices = rdsfiles),
     selectInput("tissue_csv", 
-              "Load tissue positions .csv file",
+              "Load tissue positions .csv file:",
               choices = csvfiles),
-    textInput("feature", label = "Gene"),
+    textInput("feature", label = "Gene:"),
     
     
   ),
