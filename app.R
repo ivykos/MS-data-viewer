@@ -60,6 +60,7 @@ server <- shinyServer(function(input, output) {
   featInput <- reactive({
     text <- req(input$feature)
     return(text)
+    
   })
   
   #Generate the tissue plot
@@ -81,6 +82,7 @@ server <- shinyServer(function(input, output) {
     tiss <- tissueInput()
     feat <- featInput()
     get_expression(obj, feat, tiss)
+    
   })
   
 })
