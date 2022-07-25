@@ -7,6 +7,8 @@ library(dplyr)
 library(patchwork)
 library(stringr)
 
+
+# Function for overlaying cluster labels on Visium tissue slide
 transfer_clusters <- function(obj, csv){
   positions <- data.frame(read.csv(csv, header = F))
   positions <- positions[positions$V2 == 1,]
@@ -23,6 +25,7 @@ transfer_clusters <- function(obj, csv){
   plt2
 }
 
+# Function for determining gene expression spatially
 get_expression <- function(obj, feature, csv){
   list_of_genes <- rownames(obj)
   if (feature %in% list_of_genes == FALSE){
