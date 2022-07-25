@@ -36,7 +36,9 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
       tabPanel('UMAP', plotOutput("umap")),
       tabPanel('Tissue', plotOutput("tissue")),
       tabPanel('Gene Expression', plotOutput("genex")),
-      #tabPanel("Test", tableOutput("contents"))
+      tabPanel('Violin Plots', plotOutput("vln"))
+      
+      
     ))
   
 )))
@@ -84,7 +86,12 @@ server <- shinyServer(function(input, output) {
     get_expression(obj, feat, tiss)
     
   })
-  
+  #Generate violin plots
+  output$vln <- renderPlot({
+    obj <- datasetInput()
+    feat <- featInput()
+    VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+  })
 })
 
 
