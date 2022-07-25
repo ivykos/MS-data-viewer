@@ -26,6 +26,7 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
               "Load tissue positions .csv file:",
               choices = csvfiles),
     textInput("feature", label = "Gene:"),
+    actionButton("dge", "Run Differential Gene Expression"),
     
     
   ),
@@ -44,7 +45,7 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
 )))
 
 # --- Back end ---
-server <- shinyServer(function(input, output) {
+server <- shinyServer(function(input, output, session) {
   
   # Return the requested datasets
   datasetInput <- reactive({
@@ -65,6 +66,18 @@ server <- shinyServer(function(input, output) {
     
   })
   
+  markers <- observeEvent(input$dge, {
+    
+    session$sendCustomMessage(type = "testmessage",
+                              message = "Running DGE")
+    withProgress(message = "Running Differential Gene Expression",{
+      dge_out <- FindAllMarkers(datasetInput(), only.pos = T, genes.use = VariableFeatures(datasetInput()),
+                                logfc.threshold = 0.1, min.cells.feature = 2)
+      write.csv(dge_out, "DGE-out.csv")
+    }
+    )
+  })
+  
   #Generate the tissue plot
   output$tissue <- renderPlot({
     obj <- datasetInput()
@@ -76,6 +89,7 @@ server <- shinyServer(function(input, output) {
   output$umap <- renderPlot({
     obj <- datasetInput()
     DimPlot(obj, reduction = "umap")
+    
     
   })
   # Plot the expression of a gene
