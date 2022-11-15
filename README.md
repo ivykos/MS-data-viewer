@@ -1,7 +1,7 @@
-# seuratplusvisium-data-viewer
+# MS-data-viewer
 
 
-This is the Shiny application that contains the functionalities of the Seuratplusvisium R package. 
+Shiny application for viewing various data 
 
 Add a Seurat object in .Rds format and the tissue_positions.csv file to the working directory to generate the visualizations.
 
