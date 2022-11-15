@@ -6,6 +6,7 @@ library(viridis)
 library(dplyr)
 library(patchwork)
 library(stringr)
+library(ggtips)
 
 
 # Function for overlaying cluster labels on Visium tissue slide
@@ -49,4 +50,22 @@ get_expression <- function(obj, feature, csv){
     scale_color_viridis(option = "inferno") + theme_bw() + xlab("X") + ylab("Y") +
     ggtitle(as.character(feature))
   
+}
+
+#Function for plotting predicted Cell2Location proportions
+cell2loc <- function(obj, predictions, csv, celltype){
+  x <- parse_expr(celltype)
+  cell <- read.csv(predictions)
+  cell <- cell[cell$sample %like% as.character(obj),]
+  tissue <- data.frame(read.csv(csv, header=F))
+  tissue <- tissue[tissue$V2 == 1,]
+  cells_ordered <- cell[order(cell$barcode),]
+  pos_ordered <- tissue[order(tissue$V1),]
+  type <- as.numeric(unlist(select(cells_ordered, !! x)))
+  
+  plt <- ggplot(pos_ordered, aes(x=pos_ordered$V3, y=pos_ordered$V4)) +
+    geom_point(aes(color=type), size=2) + scale_color_viridis(option="viridis") +
+    theme_bw() + xlab("X") + ylab("Y") + labs(color = "Proportion") +ggtitle(celltype)
+  
+  plt
 }
