@@ -7,16 +7,20 @@ library(egg)
 library(RColorBrewer)
 library(shinyWidgets)
 library(tidyverse)
+library(tools)
+library(ggtips)
 
 
 # Getting the file names
 rdsfiles <- list.files(pattern = "\\.Rds$")
 csvfiles <- list.files(pattern = "\\.csv$" )
+types <- c("Astrocyte","Endothelia","Ependymal","GABAergic",
+           "GLUTamatergic","Macrophage","Microglia","OPC","Oligodendrocyte")
 # --- Front End ---
 ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
   
   # Title
-  headerPanel("Seurat + Visium Data Viewer"),
+  headerPanel("Data Viewer"),
   
   # Sidebar to select a dataset
   sidebarPanel(
@@ -25,8 +29,8 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
     selectInput("tissue_csv", 
               "Load tissue positions .csv file:",
               choices = csvfiles),
+    selectInput("celltype", "Cell Type for Cell2Location", choices = types),
     textInput("feature", label = "Gene:"),
-    actionButton("dge", "Run Differential Gene Expression"),
     
     
   ),
@@ -37,7 +41,8 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
       tabPanel('UMAP', plotOutput("umap")),
       tabPanel('Tissue', plotOutput("tissue")),
       tabPanel('Gene Expression', plotOutput("genex")),
-      tabPanel('Violin Plots', plotOutput("vln"))
+      tabPanel('Violin Plots', plotOutput("vln")),
+      tabPanel('Cell2Location Prediction', plotOutput("c2l"))
       
       
     ))
@@ -66,18 +71,18 @@ server <- shinyServer(function(input, output, session) {
     
   })
   
-  markers <- observeEvent(input$dge, {
-    
-    session$sendCustomMessage(type = "testmessage",
-                              message = "Running DGE")
-    withProgress(message = "Running Differential Gene Expression",{
-      dge_out <- FindAllMarkers(datasetInput(), only.pos = T, genes.use = VariableFeatures(datasetInput()),
-                                logfc.threshold = 0.1, min.cells.feature = 2)
-      write.csv(dge_out, "DGE-out.csv")
-    }
-    )
+  # Return the cell type
+  cellInput <- reactive({
+    cell <- req(input$celltype)
+    return(cell)
   })
   
+  #Return sample name
+  sampleInput <- reactive({
+    samp <- tools::file_path_sans_ext(as.character(tissueInput()))
+    return(samp)
+  })
+
   #Generate the tissue plot
   output$tissue <- renderPlot({
     obj <- datasetInput()
@@ -105,6 +110,15 @@ server <- shinyServer(function(input, output, session) {
     obj <- datasetInput()
     feat <- featInput()
     VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+  })
+  
+  output$c2l <- renderPlot({
+    sample <- sampleInput()
+    csv <- tissueInput()
+    pred <- "cell2loc_broad_preds_norm.csv"
+    celltype <- cellInput()
+    cell2loc(sample,pred,csv,celltype)
+    
   })
 })
 
