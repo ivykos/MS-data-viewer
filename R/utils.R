@@ -6,8 +6,8 @@ library(viridis)
 library(dplyr)
 library(patchwork)
 library(stringr)
-library(ggtips)
-
+#library(ggtips)
+library(tidyverse)
 
 # Function for overlaying cluster labels on Visium tissue slide
 transfer_clusters <- function(obj, csv){
