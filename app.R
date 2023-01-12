@@ -8,7 +8,7 @@ library(RColorBrewer)
 library(shinyWidgets)
 library(tidyverse)
 library(tools)
-library(ggtips)
+#library(ggtips)
 
 
 # Getting the file names
@@ -27,8 +27,8 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
     selectInput("obj", "Choose a dataset:", #data_set is a seurat object
                 choices = rdsfiles),
     selectInput("tissue_csv", 
-              "Load tissue positions .csv file:",
-              choices = csvfiles),
+                "Load tissue positions .csv file:",
+                choices = csvfiles),
     selectInput("celltype", "Cell Type for Cell2Location", choices = types),
     textInput("feature", label = "Gene:"),
     
@@ -82,14 +82,14 @@ server <- shinyServer(function(input, output, session) {
     samp <- tools::file_path_sans_ext(as.character(tissueInput()))
     return(samp)
   })
-
+  
   #Generate the tissue plot
   output$tissue <- renderPlot({
     obj <- datasetInput()
     tiss <- tissueInput()
     transfer_clusters(obj, tiss)
     
- })
+  })
   # Retrieve the UMAP projection
   output$umap <- renderPlot({
     obj <- datasetInput()
