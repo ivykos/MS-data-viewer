@@ -6,8 +6,11 @@ library(viridis)
 library(dplyr)
 library(patchwork)
 library(stringr)
-#library(ggtips)
 library(tidyverse)
+library(rlang)
+library(data.table)
+#library(ggtips)
+
 
 # Function for overlaying cluster labels on Visium tissue slide
 transfer_clusters <- function(obj, csv){
@@ -68,4 +71,35 @@ cell2loc <- function(obj, predictions, csv, celltype){
     theme_bw() + xlab("X") + ylab("Y") + labs(color = "Proportion") +ggtitle(celltype)
   
   plt
+}
+
+
+tissue_patch <- function(obj, tiss, obj2, tiss2){
+  p1 <- transfer_clusters(obj, tiss)
+  p2 <- transfer_clusters(obj2, tiss2)
+  p1 / p2
+}
+
+umap_patch <- function(obj, obj2){
+  p1 <- DimPlot(obj, reduction = "umap")
+  p2 <- DimPlot(obj2, reduction = "umap")
+  p1 / p2
+}
+
+gene_patch <- function(obj, obj2, tiss, tiss2, feat){
+  p1 <- get_expression(obj, feat, tiss)
+  p2 <- get_expression(obj2, feat, tiss2)
+  p1 / p2
+}
+
+vln_patch <- function(obj, obj2, feat){
+  p1 <- VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+  p2 <- VlnPlot(obj2,features = feat, group.by = "seurat_clusters")
+  p1 / p2
+}
+
+c2l_patch <- function(sample, sample2, csv, csv2, celltype, pred){
+  p1 <- cell2loc(sample, pred, csv, celltype)
+  p2 <- cell2loc(sample2, pred, csv2, celltype)
+  p1 / p2
 }
