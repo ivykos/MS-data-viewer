@@ -14,8 +14,6 @@ library(dplyr)
 
 
 # Getting the file names
-##### Okay, what we need to do is download all the data and
-##### separate it into CTRL and MS groups
 rdsfiles <- list.files(pattern = "\\.Rds$")
 csvfiles <- list.files(pattern = "\\.csv$" )
 types <- c("Astrocyte","Endothelia","Ependymal","GABAergic",
