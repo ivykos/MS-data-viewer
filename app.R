@@ -8,14 +8,19 @@ library(RColorBrewer)
 library(shinyWidgets)
 library(tidyverse)
 library(tools)
+library(rlang)
+library(dplyr)
 #library(ggtips)
 
 
 # Getting the file names
+##### Okay, what we need to do is download all the data and
+##### separate it into CTRL and MS groups
 rdsfiles <- list.files(pattern = "\\.Rds$")
 csvfiles <- list.files(pattern = "\\.csv$" )
 types <- c("Astrocyte","Endothelia","Ependymal","GABAergic",
            "GLUTamatergic","Macrophage","Microglia","OPC","Oligodendrocyte")
+
 # --- Front End ---
 ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
   
@@ -24,10 +29,14 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
   
   # Sidebar to select a dataset
   sidebarPanel(
-    selectInput("obj", "Choose a dataset:", #data_set is a seurat object
+    selectInput("MS_obj", "MS dataset:", #data_set is a seurat object
                 choices = rdsfiles),
-    selectInput("tissue_csv", 
-                "Load tissue positions .csv file:",
+    selectInput("CTRL_obj", "Control dataset",
+                choices = rdsfiles),
+    selectInput("MS_tissue_csv", 
+              "MS Tissue Coordinates File:",
+              choices = csvfiles),
+    selectInput("CTRL_tissue_csv", "Control Tissue Coordinates File",
                 choices = csvfiles),
     selectInput("celltype", "Cell Type for Cell2Location", choices = types),
     textInput("feature", label = "Gene:"),
@@ -53,17 +62,26 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
 server <- shinyServer(function(input, output, session) {
   
   # Return the requested datasets
-  datasetInput <- reactive({
-    df <- readRDS(input$obj, input$obj)
-    return(df)
+  MSdatasetInput <- reactive({
+    MSdf <- readRDS(input$MS_obj)
+    return(MSdf)
   })
   
-  # Return the tissue coordinate
-  tissueInput <- reactive({
-    inFile <- req(input$tissue_csv)
-    return(inFile)
+  CTRLdatasetInput <- reactive({
+    CTRLdf <- readRDS(input$CTRL_obj)
+    return(CTRLdf)
+  })
+ 
+  # Return the tissue coordinates
+  MStissueInput <- reactive({
+    MSinFile <- req(input$MS_tissue_csv)
+    return(MSinFile)
   })
   
+  CTRLtissueInput <- reactive({
+    CTRLinFile <- req(input$CTRL_tissue_csv)
+    return(CTRLinFile)
+  })
   # Return requested gene or feature
   featInput <- reactive({
     text <- req(input$feature)
@@ -83,42 +101,60 @@ server <- shinyServer(function(input, output, session) {
     return(samp)
   })
   
+  MSsampleInput <- reactive({
+    samp <- tools::file_path_sans_ext(as.character(MStissueInput()))
+    return(samp)
+  })
+  
+  CTRLsampleInput <- reactive({
+    samp <- tools::file_path_sans_ext(as.character(CTRLtissueInput()))
+    return(samp)
+  })
+
   #Generate the tissue plot
   output$tissue <- renderPlot({
-    obj <- datasetInput()
-    tiss <- tissueInput()
-    transfer_clusters(obj, tiss)
+    obj <- MSdatasetInput()
+    tiss <- MStissueInput()
+    obj2 <- CTRLdatasetInput()
+    tiss2 <- CTRLtissueInput()
+    tissue_patch(obj, tiss, obj2, tiss2)
     
-  })
+ })
   # Retrieve the UMAP projection
   output$umap <- renderPlot({
-    obj <- datasetInput()
-    DimPlot(obj, reduction = "umap")
+    obj <- MSdatasetInput()
+    obj2 <- CTRLdatasetInput()
+    umap_patch(obj, obj2)
     
     
   })
   # Plot the expression of a gene
   output$genex <- renderPlot({
-    obj <- datasetInput()
-    tiss <- tissueInput()
+    obj <- MSdatasetInput()
+    tiss <- MStissueInput()
     feat <- featInput()
-    get_expression(obj, feat, tiss)
-    
+    obj2 <- CTRLdatasetInput()
+    tiss2 <- CTRLtissueInput()
+    gene_patch(obj, obj2, tiss, tiss2, feat)
   })
+  
   #Generate violin plots
   output$vln <- renderPlot({
-    obj <- datasetInput()
+    obj <- MSdatasetInput()
+    obj2 <- CTRLdatasetInput()
     feat <- featInput()
-    VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+    vln_patch(obj, obj2, feat)
   })
   
   output$c2l <- renderPlot({
-    sample <- sampleInput()
-    csv <- tissueInput()
+    sample <- MSsampleInput()
+    sample2 <- CTRLsampleInput()
+    csv <- MStissueInput()
+    csv2 <- CTRLtissueInput()
     pred <- "cell2loc_broad_preds_norm.csv"
     celltype <- cellInput()
-    cell2loc(sample,pred,csv,celltype)
-    
+    #cell2loc(sample,pred,csv,celltype)
+    c2l_patch(sample, sample2, csv, csv2, celltype, pred)
   })
 })
 
