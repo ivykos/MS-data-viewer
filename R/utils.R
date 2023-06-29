@@ -6,10 +6,10 @@ library(viridis)
 library(dplyr)
 library(patchwork)
 library(stringr)
-library(tidyverse)
 library(rlang)
+library(tidyverse)
 library(data.table)
-#library(ggtips)
+library(reshape2)
 
 
 # Function for overlaying cluster labels on Visium tissue slide
@@ -74,32 +74,39 @@ cell2loc <- function(obj, predictions, csv, celltype){
 }
 
 
-tissue_patch <- function(obj, tiss, obj2, tiss2){
-  p1 <- transfer_clusters(obj, tiss)
-  p2 <- transfer_clusters(obj2, tiss2)
-  p1 / p2
-}
-
-umap_patch <- function(obj, obj2){
-  p1 <- DimPlot(obj, reduction = "umap")
-  p2 <- DimPlot(obj2, reduction = "umap")
-  p1 / p2
-}
-
-gene_patch <- function(obj, obj2, tiss, tiss2, feat){
-  p1 <- get_expression(obj, feat, tiss)
-  p2 <- get_expression(obj2, feat, tiss2)
-  p1 / p2
-}
-
-vln_patch <- function(obj, obj2, feat){
-  p1 <- VlnPlot(obj, features = feat, group.by = "seurat_clusters")
-  p2 <- VlnPlot(obj2,features = feat, group.by = "seurat_clusters")
-  p1 / p2
-}
-
-c2l_patch <- function(sample, sample2, csv, csv2, celltype, pred){
-  p1 <- cell2loc(sample, pred, csv, celltype)
-  p2 <- cell2loc(sample2, pred, csv2, celltype)
-  p1 / p2
+bulk_plot <- function(cell, region, gene_list){
+  
+  #Read data
+  ctrl_string <- paste(cell, region, "CTRL.csv", sep = "_")
+  prim_string <- paste(cell, region, "Primary.csv", sep = "_")
+  sec_string <- paste(cell, region, "Secondary.csv", sep = "_")
+  
+  ctrl <- read.csv(ctrl_string, row.names = 1)
+  prim <- read.csv(prim_string, row.names = 1)
+  sec <- read.csv(sec_string, row.names = 1)
+  
+  ctrl_genes <- filter(ctrl, rownames(ctrl) %in% gene_list)
+  prim_genes <- filter(prim, rownames(prim) %in% gene_list)
+  sec_genes <- filter(sec, rownames(sec) %in% gene_list)
+  
+  table <- as.data.frame(log(t(ctrl_genes)))
+  table2 <- as.data.frame(log(t(prim_genes)))
+  table3 <- as.data.frame(log(t(sec_genes)))
+  table3 <- cbind(table3, Stat=rep("Secondary_dmyel",length(rownames(table3))))
+  table2 <- cbind(table2, Stat=rep("Primary_dmyel",length(rownames(table2))))
+  table <- cbind(table, Stat=rep("No_dmyel",length(rownames(table))))
+  full <- rbind(table3, table2)
+  full <- rbind(full, table)
+  
+  reshaped <- melt(full,id.vars = "Stat", measure.vars = gene_list)
+  
+  ggplot(reshaped, aes(x=variable, y=value, fill=Stat)) +
+    geom_boxplot() +
+    theme_bw() +
+    labs(y="", x = "", fill="") +
+    theme(axis.text.x = element_text(angle=45, hjust=1, size=10)) +
+    # theme(axis.text.x = element_blank()) + # no x-axis labels
+    # facet_wrap(~Demyel, scales = ‘free’, ncol = 1) +
+    scale_fill_manual(values = c("forestgreen","magenta","lightskyblue")) +ylab("log10")
+  
 }
