@@ -93,6 +93,12 @@ server <- shinyServer(function(input, output, session) {
     return(samp)
   })
   
+  c2lsampleInput <- reactive({
+    samp <- tools::file_path_sans_ext(as.character(datasetInput()))
+    return(samp)
+  })
+  
+  
   bulkcellInput <- reactive({
     ct <- req(input$bulk_cell)
     return(ct)
@@ -132,8 +138,11 @@ server <- shinyServer(function(input, output, session) {
   #Generate violin plots
   output$vln <- renderPlot({
     obj <- datasetInput()
-    feat <- featInput()
-    VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+    sample <- sampleInput()
+    csv <- tissueInput()
+    pred <- "cell2loc_broad_preds_norm.csv"
+    celltype <- cellInput()
+    cell2loc_violin(obj,sample,pred,csv,celltype)
   })
   
   output$c2l <- renderPlot({
@@ -142,10 +151,6 @@ server <- shinyServer(function(input, output, session) {
     pred <- "cell2loc_broad_preds_norm.csv"
     celltype <- cellInput()
     cell2loc(sample,pred,csv,celltype)
-    
-    
-    
-    
   })
   
   output$bulk <- renderPlot({
