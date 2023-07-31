@@ -42,8 +42,7 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
       tabPanel('UMAP', plotOutput("umap")),
       tabPanel('Tissue', plotOutput("tissue")),
       tabPanel('sn Gene Expression', plotOutput("genex")),
-      tabPanel('Violin Plots', plotOutput("vln")),
-      tabPanel('Cell2Location Prediction', plotOutput("c2l"))
+      tabPanel('Cell2Location Spatially Predicted Proportions', plotOutput("c2l"))
       
       
     ),
@@ -54,6 +53,13 @@ ui <- shinyUI(fluidPage(theme = shinytheme("spacelab"), pageWithSidebar(
       selectInput("bulk_cell","Cell Type", choices = bulk_types),
       selectInput("bulk_region","Brain Region", choices = regions),
       textInput("genes_list", "Gene(s)")
+    ),
+    tabsetPanel(
+      tabPanel("Cell2Location Predicted Proportions", imageOutput("image"))
+    ),
+    tabsetPanel(
+      selectInput("celltypes", "Cell Type", choices = types),
+      selectInput("region", "Region", choices = regions)
     )
     )
   
@@ -93,24 +99,33 @@ server <- shinyServer(function(input, output, session) {
     return(samp)
   })
   
-  c2lsampleInput <- reactive({
-    samp <- tools::file_path_sans_ext(as.character(datasetInput()))
-    return(samp)
-  })
-  
-  
+  #Return cell type for bulk RNA-seq visualization
   bulkcellInput <- reactive({
     ct <- req(input$bulk_cell)
     return(ct)
   })
   
+  #Return specified region for bulk RNA-seq visualization
   bulkRegionInput <- reactive({
     br <- (input$bulk_region)
     return(br)
   })
   
+  #Return desired gene for bulk RNA-seq visualization
   bulkGenes <- reactive({
     bg <- req(input$genes_list)
+  })
+  
+  #Return specified celltype for cell2loc region predictions
+  image_celltype <- reactive({
+    ct2 <- input$celltypes
+    return(ct2)
+  })
+  
+  #Return specified region for cell2loc region predictions
+  image_region <- reactive({
+    reg <- input$region
+    return(reg)
   })
 
   #Generate the tissue plot
@@ -136,14 +151,11 @@ server <- shinyServer(function(input, output, session) {
     
   })
   #Generate violin plots
-  output$vln <- renderPlot({
-    obj <- datasetInput()
-    sample <- sampleInput()
-    csv <- tissueInput()
-    pred <- "cell2loc_broad_preds_norm.csv"
-    celltype <- cellInput()
-    cell2loc_violin(obj,sample,pred,csv,celltype)
-  })
+  #output$c2lp <- renderPlot({
+  #  obj <- datasetInput()
+    #feat <- featInput()
+    #VlnPlot(obj, features = feat, group.by = "seurat_clusters")
+  #})
   
   output$c2l <- renderPlot({
     sample <- sampleInput()
@@ -151,7 +163,7 @@ server <- shinyServer(function(input, output, session) {
     pred <- "cell2loc_broad_preds_norm.csv"
     celltype <- cellInput()
     cell2loc(sample,pred,csv,celltype)
-  })
+    })
   
   output$bulk <- renderPlot({
     cell <- bulkcellInput()
@@ -159,6 +171,17 @@ server <- shinyServer(function(input, output, session) {
     gene_list <- bulkGenes()
     bulk_plot(cell, region, gene_list)
   })
+  
+  output$image <- renderImage({
+    cell <- image_celltype()
+    region <- image_region()
+    path_to_image <- as.character(paste(cell, region, ".png", sep = "_"))
+    list(
+      src = file.path(path_to_image)
+    )
+  }, deleteFile = FALSE)
+  
+  
 
   
 })
