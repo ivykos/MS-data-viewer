@@ -10,7 +10,7 @@ library(rlang)
 library(tidyverse)
 library(data.table)
 library(reshape2)
-library(ggridges)
+
 
 # Function for overlaying cluster labels on Visium tissue slide
 transfer_clusters <- function(obj, csv){
@@ -74,28 +74,6 @@ cell2loc <- function(obj, predictions, csv, celltype){
 }
 
 
-cell2loc_violin <- function(obj, sample, predictions, csv, celltype){
-  x <- parse_expr(celltype)
-  cell <- read.csv(predictions)
-  cell <- cell[cell$sample %like% sample,]
-  tissue <- data.frame(read.csv(csv, header=F))
-  tissue <- tissue[tissue$V2 == 1,]
-  cells_ordered <- cell[order(cell$barcode),]
-  pos_ordered <- tissue[order(tissue$V1),]
-  cell_ident <- as.data.frame(obj@active.ident)
-  colnames(cell_ident)[1] <- "x"
-  cell_ident$names <- rownames(cell_ident)
-  cell_ident_ordered <- cell_ident[order(cell_ident$x),]
-  cells_ordered$ident <- cell_ident_ordered$x
-  
-  #class(celltype)
-  #celltype <- parse(text=celltype)
-  p<-ggplot(cells_ordered, aes(x=ident, y=eval(parse(text = celltype)), fill=ident)) +
-    geom_violin() +ylab("Proportion")
-  p
-}
-
-
 bulk_plot <- function(cell, region, gene_list){
   
   #Read data
@@ -130,5 +108,11 @@ bulk_plot <- function(cell, region, gene_list){
     # theme(axis.text.x = element_blank()) + # no x-axis labels
     # facet_wrap(~Demyel, scales = ‘free’, ncol = 1) +
     scale_fill_manual(values = c("forestgreen","magenta","lightskyblue")) +ylab("log10")
+  
+}
+
+retrieve_plot <- function(cell, region){
+  string <- paste(cell, region, ".png", sep = "_")
+  return(string)
   
 }
